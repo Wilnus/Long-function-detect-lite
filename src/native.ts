@@ -7,11 +7,9 @@ import { promisify } from 'node:util';
 const runCompiler = promisify(execFile);
 
 export function analyzerName(): string {
-  // Новое имя исключает запуск старого анализатора
   return process.platform === 'win32' ? 'analyzer-v2.exe' : 'analyzer-v2';
 }
 
-// Компилируем анализатор
 export async function buildAnalyzer(
   extensionFolder: string,
   outputFolder: string
@@ -51,8 +49,6 @@ export async function buildAnalyzer(
   return binary;
 }
 
-// При F5 используется bin
-// После установки VSIX программа собирается в служебной папке
 export async function getAnalyzer(
   extensionFolder: string,
   storageFolder: string
@@ -68,8 +64,6 @@ export async function getAnalyzer(
   return buildAnalyzer(extensionFolder, storageFolder);
 }
 
-// Передаём весь текст документа
-// Поиск функций выполняется только в C++
 export function runAnalyzer(
   binary: string,
   text: string

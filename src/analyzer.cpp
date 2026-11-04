@@ -4,19 +4,19 @@
 #include <cctype>
 #include <stdexcept>
 
-// Отдельное слово или знак и номер строки, где он находится
+
 struct Token {
     std::string text;
     int line;
 };
 
-bool wordChar(char c) { // Проверяет, может ли символ входить в слово
+bool wordChar(char c) { 
     return std::isalnum(static_cast<unsigned char>(c)) || c == '_' || static_cast<unsigned char>(c) >= 128;
 }
 
-// Пропускаем комментов // или #
-// Обратная косая черта может продолжать коменты на следующей строке
-void skipLine(const std::string& code, size_t& i, int& line) { // Пропускает однострочный комментарий или #
+
+
+void skipLine(const std::string& code, size_t& i, int& line) { 
     bool continued = true;
 
     while (continued && i < code.size()) {
@@ -39,8 +39,8 @@ void skipLine(const std::string& code, size_t& i, int& line) { // Пропуск
     }
 }
 
-// Комментарии и содержимое строк не добавляем в список
-std::vector<Token> tokenize(const std::string& code) { // Выделяет слова и знаки, сохраняя номера строк
+
+std::vector<Token> tokenize(const std::string& code) { 
     std::vector<Token> tokens;
     size_t i = 0;
     int line = 1;
@@ -58,13 +58,12 @@ std::vector<Token> tokenize(const std::string& code) { // Выделяет сл�
             continue;
         }
 
-        // Однострочный комментарий или директива препроцессора
         if (c == '#' || (c == '/' && i + 1 < code.size() && code[i + 1] == '/')) {
             skipLine(code, i, line);
             continue;
         }
 
-        // Многострочный комментарий
+
         if (c == '/' && i + 1 < code.size() && code[i + 1] == '*') {
             i += 2;
 
@@ -83,8 +82,7 @@ std::vector<Token> tokenize(const std::string& code) { // Выделяет сл�
             continue;
         }
 
-        // Необработанные строки: R"tag(...)tag"
-        // и варианты с префиксами u8, u, U, L.
+
         size_t raw = i;
 
         if (code.compare(i, 4, "u8R\"") == 0) {
@@ -120,14 +118,14 @@ std::vector<Token> tokenize(const std::string& code) { // Выделяет сл�
             continue;
         }
 
-        // Обычные строки и символьные литералы
+
         if (c == '"' || c == '\'') {
             char quote = c;
             bool closed = false;
             i++;
 
             while (i < code.size()) {
-                // Пропускаем экранированный символ
+
                 if (code[i] == '\\') {
                     i++;
                     if (i < code.size()) {
@@ -155,12 +153,11 @@ std::vector<Token> tokenize(const std::string& code) { // Выделяет сл�
             continue;
         }
 
-        // Слово или число
         if (wordChar(c)) {
             size_t start = i;
             bool number = std::isdigit(static_cast<unsigned char>(c));
 
-            // Учитываем разделитель цифр: например, 100'000
+
             while (i < code.size() && (wordChar(code[i]) || (number && code[i] == '\''))) {
                 i++;
             }
@@ -169,7 +166,7 @@ std::vector<Token> tokenize(const std::string& code) { // Выделяет сл�
             continue;
         }
 
-        // :: сохраняем как один знак
+
         if (c == ':' && i + 1 < code.size() && code[i + 1] == ':') {
             tokens.push_back({"::", line});
             i += 2;
@@ -182,8 +179,8 @@ std::vector<Token> tokenize(const std::string& code) { // Выделяет сл�
     return tokens;
 }
 
-// Проверяем, похож ли текст перед { на заголовок функции
-bool functionHeader(const std::vector<Token>& header) { // 	Отличает заголовок функции от других конструкций
+
+bool functionHeader(const std::vector<Token>& header) {
     int round = 0;
     int square = 0;
     int depth = 0;
@@ -195,7 +192,6 @@ bool functionHeader(const std::vector<Token>& header) { // 	Отличает з�
         }     
     }
 
-    // Присваивание вне параметров означает переменную, например: auto action = []() { ... };
     for (const Token& token : header) {
         if (token.text == "(") {depth++;}
         if (token.text == ")") {depth--;}
@@ -213,7 +209,7 @@ bool functionHeader(const std::vector<Token>& header) { // 	Отличает з�
             if (round == 0 && square == 0 && i > 0) {
                 const std::string& name = header[i - 1].text;
 
-                // Эти конструкции не являются функциями
+
                 bool blocked = name == "if" || name == "for" || name == "while" || name == "switch" || name == "catch" 
                 || name == "sizeof" || name == "alignof" || name == "decltype" || name == "noexcept" || name == "requires" || name == "static_assert";
 
@@ -228,7 +224,6 @@ bool functionHeader(const std::vector<Token>& header) { // 	Отличает з�
                 bool nameOK = !name.empty() && (std::isalpha(static_cast<unsigned char>(name[0])) 
                 || name[0] == '_' || static_cast<unsigned char>(name[0]) >= 128);
 
-                // Не принимаем объявление указателя за функцию
                 bool pointer = i + 1 < header.size() && (header[i + 1].text == "*" || header[i + 1].text == "&");
 
                 if (!blocked && !pointer && (nameOK || hasOperator) && (!assignment || hasOperator)) {
@@ -244,8 +239,8 @@ bool functionHeader(const std::vector<Token>& header) { // 	Отличает з�
     return false;
 }
 
-// В конструкторе member{...} ещё не является телом функции
-bool initializerBrace(const std::vector<Token>& header) { // Отличает инициализатор конструктора от тела функции
+
+bool initializerBrace(const std::vector<Token>& header) { 
     int round = 0;
     bool colon = false;
 
@@ -266,7 +261,7 @@ bool initializerBrace(const std::vector<Token>& header) { // Отличает и
     return wordChar(last[0]) || last == ">" || last == "]";
 }
 
-// Находим границы функций и считаем их строки
+
 void findFunctions(const std::vector<Token>& tokens) {
     std::vector<Token> header;
 
@@ -279,12 +274,12 @@ void findFunctions(const std::vector<Token>& tokens) {
     for (const Token& token : tokens) {
         const std::string& text = token.text;
 
-        // находимся внутри функции
+        
         if (bodyDepth > 0) {
             if (text == "{") {bodyDepth++;}
             if (text == "}") {bodyDepth--;}
         
-            // Закрылась скобка, с которой началось тело функции
+            
             if (bodyDepth == 0) {
                 int count = token.line - firstLine + 1;
 
@@ -295,7 +290,7 @@ void findFunctions(const std::vector<Token>& tokens) {
             continue;
         }
 
-        // Пропускаем фигурные скобки инициализатора конструктора.
+        
         if (initializerDepth > 0) {
             header.push_back(token);
 
@@ -311,8 +306,6 @@ void findFunctions(const std::vector<Token>& tokens) {
             
 
         if (round == 0 && square == 0) {
-            // public:, private: и protected: не входят
-            // в заголовок следующего метода.
             if (text == ":" && header.size() == 1 && 
             (header[0].text == "public" || header[0].text == "private" || header[0].text == "protected")) {
                 header.clear();
@@ -333,7 +326,7 @@ void findFunctions(const std::vector<Token>& tokens) {
                 header.clear();
                 continue;
             }
-            // Закончилось объявление или закрылась область
+
             if (text == ";" || text == "}") {
                 header.clear();
                 continue;
@@ -351,11 +344,10 @@ int main() {
     std::string code;
     std::string line;
 
-    // Получаем весь текст документа от TypeScript
+
     while (std::getline(std::cin, line))
         code += line + "\n";
 
-    // Обработка ошибок и исключений
     try {
         std::vector<Token> tokens = tokenize(code);
         findFunctions(tokens);

@@ -3,7 +3,6 @@ import * as vscode from 'vscode';
 import { getAnalyzer, runAnalyzer } from './native.ts';
 
 export function activate(context: vscode.ExtensionContext): void {
-  // Внешний вид выделения.
   const decoration = vscode.window.createTextEditorDecorationType({
     isWholeLine: true,
     backgroundColor: 'rgba(255, 138, 196, 0.18)',
@@ -83,7 +82,7 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   );
 
-  // Кнопка в нижней строке состояния.
+
   const button = vscode.window.createStatusBarItem(
     vscode.StatusBarAlignment.Left,
     100
@@ -95,7 +94,7 @@ export function activate(context: vscode.ExtensionContext): void {
   button.command = 'LongFunctionDetect.check';
   button.show();
 
-  // Сброс выделения при изменении документа.
+
   const changes = vscode.workspace.onDidChangeTextDocument(event => {
     for (const editor of vscode.window.visibleTextEditors) {
       if (editor.document.uri.toString() === event.document.uri.toString()) {
