@@ -1,67 +1,34 @@
 {
-  "name": "long-function-detect",
-  "displayName": "LongFunctionDetect",
-  "description": "This plugin looks for functions longer than 40 lines, in order to prevent the creation of suboptimal functions.",
+  "name": "long-function-detect-lite",
+  "displayName": "LongFunctionDetect_Lite",
+  "description": "Поиск функций C++ длиннее 40 строк",
   "version": "0.0.1",
-  "publisher": "student-lab",
+  "publisher": "student",
   "engines": {
     "vscode": "^1.100.0"
   },
-  "categories": [
-    "Other"
-  ],
   "main": "./dist/extension.js",
   "activationEvents": [
     "onStartupFinished"
   ],
-  "extensionKind": [
-    "workspace"
-  ],
-  "capabilities": {
-    "virtualWorkspaces": false,
-    "untrustedWorkspaces": {
-      "supported": false,
-      "description": "Расширение компилирует и запускает программу C++."
-    }
-  },
   "contributes": {
     "commands": [
       {
-        "command": "LongFunctionDetect.check",
-        "title": "LongFunctionDetect: найти функции длиннее 40 строк"
+        "command": "LongFunctionDetect_Lite.check",
+        "title": "LongFunctionDetect_Lite: проверить функции"
       }
     ]
   },
   "scripts": {
+    "compile": "tsc --noEmit && node esbuild.js",
     "vscode:prepublish": "npm run compile",
-    "compile": "npm run check-types && tsx esbuild.js",
-    "watch": "npm-run-all -p watch:*",
-    "watch:esbuild": "tsx esbuild.js --watch",
-    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
-    "package": "vsce package --allow-missing-repository",
-    "compile-tests": "tsc -p . --outDir out",
-    "watch-tests": "tsc -p . -w --outDir out",
-    "pretest": "npm run compile-tests && npm run compile && npm run lint",
-    "check-types": "tsc --noEmit",
-    "lint": "eslint src",
-    "test": "vscode-test"
+    "package": "vsce package --allow-missing-repository"
   },
   "devDependencies": {
-    "@types/mocha": "^10.0.10",
     "@types/node": "24.x",
     "@types/vscode": "1.100.0",
-    "@vscode/test-cli": "^0.0.15",
-    "@vscode/test-electron": "^3.0.0",
     "@vscode/vsce": "4.1.0",
     "esbuild": "^0.28.2",
-    "eslint": "^10.5.0",
-    "npm-run-all": "^4.1.5",
-    "tsx": "4.19.4",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.61.1"
-  },
-  "overrides": {
-    "diff": "^8.0.4",
-    "serialize-javascript": "^7.0.6"
+    "typescript": "^6.0.3"
   }
 }

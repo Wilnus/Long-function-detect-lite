@@ -15,4 +15,3 @@ vsc-extension-quickstart.md
 bin/**
 *.vsix
 *.zip
-CHECKS.md
