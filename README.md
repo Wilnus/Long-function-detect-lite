@@ -1,4 +1,4 @@
-# LongFunctionDetect
+# LongFunctionDetectLite
 **Автор:** Волков Николай Игоревич  
 **Группа:** М3111 
 
