@@ -1,7 +1,7 @@
 
 #include <iostream>
 #include <string>
-#include <vector>
+#include <sstream>
 #include <cctype>
 
 using namespace std;
@@ -11,11 +11,8 @@ struct Token {
     int line;
 };
 
-vector<Token> tokenize(const string& code) {
-    vector<Token> result;
-    int line = 1;
-
-    for (size_t i = 0; i < code.size();) {
+Token nextToken(const string& code, size_t& i, int& line) {
+    while (i < code.size()) {
         char c = code[i];
 
         if (c == '\n') {
@@ -39,6 +36,7 @@ vector<Token> tokenize(const string& code) {
 
             while (i < code.size()) {
                 if (code[i] == '\n') line++;
+
                 if (code[i] == '*' && i + 1 < code.size() && code[i + 1] == '/') {
                     i += 2;
                     break;
@@ -54,104 +52,124 @@ vector<Token> tokenize(const string& code) {
 
             while (i < code.size()) {
                 if (code[i] == '\\' && i + 1 < code.size()) {
+                    if (code[i + 1] == '\n') line++;
                     i += 2;
                     continue;
                 }
+
                 if (code[i] == '\n') line++;
                 if (code[i++] == quote) break;
             }
             continue;
         }
 
+        int tokenLine = line;
+
         if (isalnum((unsigned char)c) || c == '_') {
             size_t start = i++;
 
-            while (i < code.size() && (isalnum((unsigned char)code[i]) || code[i] == '_')) {
+            while (i < code.size() &&
+                   (isalnum((unsigned char)code[i]) || code[i] == '_')) {
                 i++;
             }
 
-            result.push_back({code.substr(start, i - start), line});
-            continue;
+            return {code.substr(start, i - start), tokenLine};
         }
 
-        result.push_back({string(1, c), line});
         i++;
+        return {string(1, c), tokenLine};
     }
 
-    return result;
+    return {"", line};
 }
 
 
-bool isFunction(const vector<Token>& header) {
-    for (size_t i = 1; i < header.size(); i++) {
-        if (header[i].text != "(") continue;
+bool isFunction(const string& header) {
+    istringstream stream(header);
+    string word, previous;
 
-        string name = header[i - 1].text;
 
-        if (name == "if" || name == "for" || name == "while" || name == "switch" || name == "catch") {
-            return false;
+    while (stream >> word) {
+        if (word == "(") {
+
+
+            if (previous == "if" || previous == "for" || previous == "while" || previous == "switch" || previous == "catch") {
+                return false;
+            }
+
+
+            if (!previous.empty() &&
+                (isalpha((unsigned char)previous[0]) || previous[0] == '_')) {
+                return true;
+            }
         }
 
-        if (!name.empty() && (isalpha((unsigned char)name[0]) || name[0] == '_')) {
-            return true;
-        }
+        previous = word;
     }
 
     return false;
 }
 
+int main() {
+    string code, lineText;
 
-void findFunctions(const vector<Token>& tokens) {
-    vector<Token> header;
 
-    for (size_t i = 0; i < tokens.size(); i++) {
-        string t = tokens[i].text;
+    while (getline(cin, lineText)) {
+        code += lineText + '\n';
+    }
 
-        if (t == "{") {
-            if (isFunction(header) && !header.empty()) {
-                int first = header[0].line;
+    size_t i = 0;
+    int line = 1;
+    int first = 1;
+
+    string header;
+    Token token;
+
+
+    while (!(token = nextToken(code, i, line)).text.empty()) {
+
+
+        if (token.text == "{") {
+
+            if (isFunction(header)) {
                 int depth = 1;
-                size_t j = i + 1;
+                Token endToken = token;
 
-                while (j < tokens.size() && depth > 0) {
-                    if (tokens[j].text == "{") depth++;
-                    if (tokens[j].text == "}") depth--;
-                    j++;
+                while (depth > 0) {
+                    endToken = nextToken(code, i, line);
+
+                    if (endToken.text.empty()) break;
+
+                    if (endToken.text == "{") depth++;
+                    if (endToken.text == "}") depth--;
                 }
 
                 if (depth == 0) {
-                    int last = tokens[j - 1].line;
+                    int last = endToken.line;
                     int length = last - first + 1;
 
                     if (length > 40) {
                         cout << first << ' ' << last << ' ' << length << '\n';
                     }
                 }
-
-                i = j - 1;
             }
 
             header.clear();
         }
-        else if (t == ";" || t == "}") {
+
+        else if (token.text == ";" || token.text == "}") {
             header.clear();
         }
-        else if (t == ":" && header.size() == 1 && (header[0].text == "public" || header[0].text == "private" || header[0].text == "protected")) {
+
+        else if (token.text == ":" && (header == "public " || header == "private " || header == "protected ")) {
             header.clear();
         }
+
         else {
-            header.push_back(tokens[i]);
+            if (header.empty()) first = token.line;
+            header += token.text + " ";
         }
     }
-}
 
-int main() {
-    string code, line;
-
-    while (getline(cin, line)) {
-        code += line + '\n';
-    }
-
-    findFunctions(tokenize(code));
     return 0;
 }
